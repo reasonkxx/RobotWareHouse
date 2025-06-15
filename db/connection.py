@@ -9,7 +9,7 @@ def get_connection():
     )
 
     try:
-        # Встановлюємо з'єднання
+        #встановлюємо з'єднання
         conn = pyodbc.connect(conn_str)
         return conn
     

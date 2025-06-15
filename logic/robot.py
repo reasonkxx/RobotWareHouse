@@ -56,7 +56,7 @@ class RobotNavigator:
         self.status_lock = Lock()  #блокування для оновлення статуса
         self.planned_path_lock = Lock()  #блокування для оновлення запланованого шляху
         self.planned_path = []  #запланований шлях для інших роботів
-        self.pathfinding_algorithm = "auto"
+        self.pathfinding_algorithm = "a_star"
         #доступні опції: "a_star", "dijkstra", "auto"
         self.navigator = Navigator()  
         self.max_retry_attempts = 5  #максимальна кількість спроб
@@ -64,7 +64,7 @@ class RobotNavigator:
         self.max_wait_time = 30  #максимальний час очікування (секунди)
         self.fallback_positions = []  #резервні позиції для очікування
           #налаштування для автоматичного вибору алгоритму
-        self.auto_switch_threshold = 10  #кількість викликів для прийняття рішення
+        self.auto_switch_threshold = 20  #кількість викликів для прийняття рішення
         self.performance_weight = 0.7   #вага продуктивності проти якості шляху
         self.default_shelf_coords = (4, 21)
         self.charging_power_W = 1000.0    #потужність зарядного пристрою, Вт 
@@ -1663,12 +1663,12 @@ class RobotNavigator:
                     #немає замовлень
                     if self.battery_level < 90.0:
                         #якщо заряд < 90% і нема чого робити то їдемо на зарядку
-                        print(f"Робот #{self.robot_id}: Немає замовлень і заряд {self.battery_level}% < 90% → їду на зарядку")
+                        # print(f"Робот #{self.robot_id}: Немає замовлень і заряд {self.battery_level}% < 90% → їду на зарядку")
                         self.go_to_charging_station()
                     else:
                         #заряд достатній, але нема замовлень то повертаємося на стандартну позицію
                         standard_pos = self.get_standard_position()
-                        print(f"Робот #{self.robot_id}: Немає замовлень і заряд {self.battery_level}% ≥ 90% → повертаюся на стандартну позицію {standard_pos}")
+                        # print(f"Робот #{self.robot_id}: Немає замовлень і заряд {self.battery_level}% ≥ 90% → повертаюся на стандартну позицію {standard_pos}")
                         self.safe_move_to(standard_pos)
 
             #коротка пауза щоб уникнути «гарячого» циклу

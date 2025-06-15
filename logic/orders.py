@@ -6,7 +6,7 @@ import random
 def generate_random_order(conn):
     cursor = conn.cursor()
 
-    #Створюємо нове замовлення та одразу отримуємо його ID
+    #створюємо нове замовлення та одразу отримуємо його ID
     status = 'pending'
     cursor.execute("""
         INSERT INTO orders (created_at, status)
@@ -22,7 +22,7 @@ def generate_random_order(conn):
 
     print(f"Створено замовлення №{order_id}")
 
-    #Отримуємо всі доступні товари
+    #отримуємо всі доступні товари
     cursor.execute("SELECT id FROM items")
     items = [row.id for row in cursor.fetchall()]
 
@@ -30,7 +30,7 @@ def generate_random_order(conn):
         print("У таблиці товарів (items) немає записів.")
         return
 
-    #Випадково вибираємо кілька товарів для замовлення
+    #випадково вибираємо кілька товарів для замовлення
     num_items = random.randint(1, 2)
     selected_items = random.sample(items, num_items)
 
@@ -48,7 +48,7 @@ def generate_random_order(conn):
 def process_order(conn, order_id):
     cursor = conn.cursor()
 
-    #Отримати всі товари з замовлення
+    #отримати всі товари з замовлення
     cursor.execute("""
         SELECT item_id, quantity FROM order_items
         WHERE order_id = ?
@@ -59,7 +59,7 @@ def process_order(conn, order_id):
         item_id = item[0]
         qty_needed = item[1]
 
-        #Знайти потрібний товар на палетах
+        #знайти потрібний товар на палетах
         cursor.execute("""
             SELECT id, location_id, quantity FROM inventory
             WHERE item_id = ? AND location_type = 'pallet'
@@ -76,7 +76,7 @@ def process_order(conn, order_id):
             available = source[2]
             take = min(available, qty_needed)
 
-            #Зменшити кількість на палеті
+            #зменшити кількість на палеті
             new_qty = available - take
             if new_qty > 0:
                 cursor.execute("UPDATE inventory SET quantity = ? WHERE id = ?", (new_qty, source_id))
@@ -85,7 +85,7 @@ def process_order(conn, order_id):
 
             qty_needed -= take
 
-            #Знайти вільну полицю
+            #знайти вільну полицю
             cursor.execute("""
                 SELECT id FROM shelves
                 WHERE status = 'free'
@@ -99,20 +99,20 @@ def process_order(conn, order_id):
 
             shelf_id = shelf[0]
 
-            #Покласти товар на полицю
+            #покласти товар на полицю
             cursor.execute("""
                 INSERT INTO inventory (item_id, location_type, location_id, quantity)
                 VALUES (?, 'shelf', ?, ?)
             """, (item_id, shelf_id, take))
 
-            #Оновити полицю
+            #оновити полицю
             cursor.execute("""
                 UPDATE shelves
                 SET status = 'busy', current_order_id = ?
                 WHERE id = ?
             """, (order_id, shelf_id))
 
-    #Завершити замовлення
+    #завершити замовлення
     cursor.execute("UPDATE orders SET status = 'done' WHERE id = ?", (order_id,))
     conn.commit()
     print(f"Замовлення #{order_id} виконано")
@@ -120,7 +120,7 @@ def process_order(conn, order_id):
 def clear_shelf(conn, shelf_id):
     cursor = conn.cursor()
 
-    # Отримуємо замовлення, яке прив'язане до полиці
+    #отримуємо замовлення, яке прив'язане до полиці
     cursor.execute("""
         SELECT current_order_id FROM shelves WHERE id = ?
     """, (shelf_id,))
@@ -132,27 +132,27 @@ def clear_shelf(conn, shelf_id):
 
     order_id = result[0]
 
-    # Видаляємо товари з inventory, які на цій полиці
+    #видаляємо товари з inventory, які на цій полиці
     cursor.execute("""
         DELETE FROM inventory
         WHERE location_type = 'shelf' AND location_id = ?
     """, (shelf_id,))
 
-    # Очищаємо полицю
+    #очищаємо полицю
     cursor.execute("""
         UPDATE shelves
         SET status = 'free', current_order_id = NULL
         WHERE id = ?
     """, (shelf_id,))
 
-    # Перевіряємо, чи ще є полиці з цим замовленням
+    #перевіряємо, чи ще є полиці з цим замовленням
     cursor.execute("""
         SELECT COUNT(*) FROM shelves
         WHERE current_order_id = ?
     """, (order_id,))
     remaining = cursor.fetchone()[0]
 
-    # Якщо більше немає — оновлюємо статус замовлення
+    #якщо більше немає, то оновлюємо статус замовлення
     if remaining == 0:
         cursor.execute("""
             UPDATE orders
@@ -168,7 +168,7 @@ def clear_shelf(conn, shelf_id):
 def clear_all_shelves_for_order(conn, order_id):
     cursor = conn.cursor()
 
-    #Знайти всі полиці, прив'язані до цього замовлення
+    #знайти всі полиці, прив'язані до цього замовлення
     cursor.execute("""
         SELECT id FROM shelves
         WHERE current_order_id = ?
@@ -185,10 +185,3 @@ def clear_all_shelves_for_order(conn, order_id):
         clear_shelf(conn, shelf_id) 
 
     print(f"Замовлення #{order_id} повністю видане.")
-
-
-
-
-# def process_order(order_id):
-
-#     return
